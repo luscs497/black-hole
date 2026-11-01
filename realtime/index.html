@@ -5,14 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Buraco Negro — Tempo Real</title>
 <style>
-/* Painel no estilo de instrumento de laboratório: superfícies chapadas, linhas
-   finas, números em mono, uma única cor de destaque (a do disco). */
 :root{
   --bg:#050505; --panel:#0d0d0c; --raise:#151513; --line:#262522; --line2:#3a3934;
   --text:#e6e2d8; --dim:#8c887e; --faint:#5c5a54; --hot:#e9a14a; --rec:#e2483d;
   --mono:ui-monospace,"JetBrains Mono","SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
-  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-  --pw:288px;
+  --pw:272px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
@@ -33,97 +30,88 @@ canvas.drag{cursor:grabbing}
   opacity:0;transition:opacity .2s;pointer-events:none;text-shadow:0 0 6px #000}
 body.recording #toast{bottom:36px}
 
-/* painel */
-#panel{position:fixed;right:0;top:0;bottom:0;width:var(--pw);overflow-y:auto;overflow-x:hidden;
-  background:var(--panel);border-left:1px solid var(--line);
-  transition:transform .28s cubic-bezier(.2,.7,.2,1);scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
-body.closed #panel{transform:translateX(100%)}
-.ph{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 16px 12px;
-  border-bottom:1px solid var(--line)}
-.ph .tag{font-size:10px;letter-spacing:.18em;color:var(--faint);text-transform:uppercase}
-.ph h1{font:400 22px/1.1 var(--serif);margin:6px 0 0;letter-spacing:.005em;color:var(--text)}
-.ph h1 i{color:var(--hot);font-style:italic}
-.lede{margin:0;padding:10px 16px 12px;color:var(--dim);font-size:11px;line-height:1.6;border-bottom:1px solid var(--line)}
-.lede em{font-style:normal;color:var(--text)}
-#close{width:26px;height:26px;margin:-2px -4px 0 0;padding:0;border:1px solid transparent;background:none;
-  color:var(--dim);font:16px/1 var(--mono);cursor:pointer}
-#close:hover{color:var(--text);border-color:var(--line2)}
+/* painel: um cartão flutuante simples, controles nativos do navegador */
+#panel{position:fixed;right:12px;top:12px;width:var(--pw);max-height:calc(100% - 24px);
+  overflow-y:auto;overflow-x:hidden;background:rgba(28,28,30,.94);border:1px solid #3a3a3c;border-radius:8px;
+  box-shadow:0 6px 24px rgba(0,0,0,.5);font:13px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color:#ddd;accent-color:#5b9dff;color-scheme:dark;
+  transition:opacity .15s,transform .15s;scrollbar-width:thin;scrollbar-color:#48484a transparent}
+body.closed #panel{opacity:0;transform:translateY(-6px);pointer-events:none}
+.ph{display:flex;justify-content:space-between;align-items:center;padding:10px 10px 10px 14px;
+  border-bottom:1px solid #3a3a3c}
+.ph h1{font-size:14px;font-weight:600;margin:0;color:#fff}
+.ph small{font-size:12px;color:#8e8e93;margin-left:6px;font-weight:400}
+#close{width:24px;height:24px;padding:0;border:0;border-radius:4px;background:none;
+  color:#8e8e93;font:18px/1 system-ui,sans-serif;cursor:pointer}
+#close:hover{background:#3a3a3c;color:#fff}
 
-/* aba para reabrir */
-#tab{position:fixed;right:0;top:50%;transform:translate(100%,-50%);writing-mode:vertical-rl;
-  padding:14px 7px;background:var(--panel);border:1px solid var(--line);border-right:0;color:var(--dim);
-  font:10px var(--mono);letter-spacing:.22em;text-transform:uppercase;cursor:pointer;
-  transition:transform .28s cubic-bezier(.2,.7,.2,1),color .15s}
-#tab:hover{color:var(--text)}
-#tab span{color:var(--faint)}
-body.closed #tab{transform:translate(0,-50%)}
+/* botão pra reabrir */
+#tab{position:fixed;right:12px;top:12px;padding:6px 10px;background:rgba(28,28,30,.94);
+  border:1px solid #3a3a3c;border-radius:6px;color:#ddd;font:13px system-ui,-apple-system,"Segoe UI",sans-serif;
+  cursor:pointer;display:none}
+#tab:hover{background:#3a3a3c}
+#tab span{display:none}
+body.closed #tab{display:block}
 body.cinema #panel,body.cinema #tab,body.cinema #hud{display:none}
 
 /* seções */
-details{border-bottom:1px solid var(--line)}
-summary{display:flex;align-items:baseline;gap:10px;padding:11px 16px;cursor:pointer;list-style:none;
-  font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--text);user-select:none}
+details{border-bottom:1px solid #2c2c2e}
+details:last-child{border-bottom:0}
+summary{display:flex;align-items:center;gap:6px;padding:9px 14px;cursor:pointer;list-style:none;
+  font-weight:600;color:#fff;user-select:none}
 summary::-webkit-details-marker{display:none}
-summary .n{color:var(--faint);letter-spacing:.06em}
-summary::after{content:"+";margin-left:auto;color:var(--faint);font-size:13px;letter-spacing:0}
-details[open] summary::after{content:"−"}
-summary:hover::after{color:var(--text)}
-.body{padding:0 16px 14px}
+summary::before{content:"";width:0;height:0;border:4px solid transparent;border-left:5px solid #8e8e93;
+  margin-right:2px;transition:transform .12s;transform-origin:2px 50%}
+details[open] summary::before{transform:rotate(90deg)}
+summary:hover{background:#2c2c2e}
+.body{padding:0 14px 12px}
 
-/* slider: rótulo e valor em cima, trilho fino embaixo */
-.ctl{display:block;margin:10px 0 0}
-.ctl .t{display:flex;justify-content:space-between;color:var(--dim)}
-.ctl output{color:var(--text);font-variant-numeric:tabular-nums}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:16px;margin:2px 0 0;background:none;cursor:pointer}
-input[type=range]::-webkit-slider-runnable-track{height:1px;
-  background:linear-gradient(90deg,var(--text) var(--p,50%),var(--line2) var(--p,50%))}
-input[type=range]::-moz-range-track{height:1px;background:var(--line2)}
-input[type=range]::-moz-range-progress{height:1px;background:var(--text)}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:3px;height:13px;margin-top:-6px;
-  background:var(--text);border:0;border-radius:0}
-input[type=range]::-moz-range-thumb{width:3px;height:13px;background:var(--text);border:0;border-radius:0}
-input[type=range]:hover::-webkit-slider-thumb{background:var(--hot)}
-input[type=range]:hover::-moz-range-thumb{background:var(--hot)}
+/* sliders */
+.ctl{display:block;margin:8px 0 0}
+.ctl .t{display:flex;align-items:center;color:#c7c7cc}
+.ctl output{margin-left:auto;color:#fff;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;margin:3px 0 0;cursor:pointer}
 
-/* liga/desliga: quadradinho + texto + tecla */
-.tg{display:flex;align-items:center;gap:10px;margin:9px 0 0;color:var(--dim);cursor:pointer;user-select:none}
-.tg input{-webkit-appearance:none;appearance:none;margin:0;width:11px;height:11px;flex:none;
-  border:1px solid var(--line2);background:none;cursor:pointer}
-.tg input:checked{background:var(--hot);border-color:var(--hot)}
-.tg:has(input:checked){color:var(--text)}
-.tg em,.ctl em,.sel em,button em{font-style:normal;color:var(--faint);margin-left:auto}
-.ctl .t em{margin-left:8px;margin-right:auto}
+/* liga/desliga */
+.tg{display:flex;align-items:center;gap:8px;margin:7px 0 0;color:#c7c7cc;cursor:pointer;user-select:none}
+.tg input{margin:0;width:14px;height:14px;flex:none;cursor:pointer}
+.tg:has(input:checked){color:#fff}
 
-.sel{display:flex;align-items:center;gap:10px;margin:10px 0 0;color:var(--dim)}
-select{flex:1;font:inherit;color:var(--text);background:none;border:0;border-bottom:1px solid var(--line2);
-  border-radius:0;padding:4px 0;cursor:pointer;outline:none}
-select option{background:var(--panel)}
+/* teclas de atalho em caixinha */
+.tg em,.ctl em,.sel em,button em,.keys b{font:11px/1 ui-monospace,Consolas,monospace;font-style:normal;
+  color:#aeaeb2;background:#2c2c2e;border:1px solid #48484a;border-bottom-width:2px;border-radius:4px;
+  padding:2px 5px;margin-left:auto;white-space:nowrap}
+.ctl .t em{margin-left:6px;margin-right:0}
+
+.sel{display:flex;align-items:center;gap:8px;margin:8px 0 0;color:#c7c7cc}
+select{flex:1;font:inherit;color:#fff;background:#2c2c2e;border:1px solid #48484a;border-radius:5px;
+  padding:4px 6px;cursor:pointer}
 .sel em{margin-left:0}
 
 button{font:inherit;cursor:pointer}
-.act{display:flex;align-items:center;width:100%;margin-top:12px;padding:8px 10px;background:none;
-  color:var(--text);border:1px solid var(--line2);border-radius:0;text-align:left;letter-spacing:.04em}
-.act:hover{border-color:var(--dim);background:var(--raise)}
-.act.rec::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--rec);margin-right:10px}
-.act.rec.on{border-color:var(--rec);color:var(--rec)}
-.act.rec.on::before{border-radius:0}
-.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.pair .act{margin-top:8px}
+.act{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;padding:6px 10px;
+  background:#3a3a3c;color:#fff;border:1px solid #48484a;border-radius:5px}
+.act:hover{background:#48484a}
+.act:active{background:#2c2c2e}
+.act em{margin-left:0;background:#2c2c2e}
+.act.rec::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--rec)}
+.act.rec.on{background:#5a1e1a;border-color:var(--rec)}
+.act.rec.on::before{border-radius:1px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pair .act{margin-top:6px}
 
-.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;padding:2px 0 0;color:var(--dim)}
-.keys b{font-weight:400;color:var(--text);white-space:nowrap}
+.keys{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px 10px;color:#c7c7cc}
+.keys b{font-weight:400;margin:0;justify-self:start}
 
 #err{position:fixed;inset:auto 16px 16px 16px;background:#1a0b09;color:#f3c9c2;border:1px solid #5a1e17;
   padding:10px 12px;font:11px var(--mono);white-space:pre-wrap;display:none;max-height:40vh;overflow:auto}
-:focus-visible{outline:1px solid var(--hot);outline-offset:2px}
+:focus-visible{outline:2px solid #5b9dff;outline-offset:1px}
 
 @media (max-width:640px){
-  :root{--pw:100%}
-  #panel{top:auto;height:58vh;border-left:0;border-top:1px solid var(--line)}
-  body.closed #panel{transform:translateY(100%)}
-  #tab{top:auto;bottom:0;right:16px;writing-mode:horizontal-tb;transform:translateY(100%);
-    border:1px solid var(--line);border-bottom:0;padding:7px 14px}
-  body.closed #tab{transform:none}
+  :root{--pw:auto}
+  #panel{left:8px;right:8px;top:auto;bottom:8px;max-height:55vh}
+  body.closed #panel{transform:translateY(8px)}
+  #tab{top:auto;bottom:12px}
 }
 </style>
 </head>
@@ -136,12 +124,11 @@ button{font:inherit;cursor:pointer}
 
 <aside id="panel" aria-label="Controles">
   <header class="ph">
-    <div><div class="tag">Kerr · ray tracing · GPU</div><h1>Buraco <i>negro</i></h1></div>
+    <h1>Buraco negro<small>Kerr</small></h1>
     <button id="close" title="Fechar painel (H)" aria-label="Fechar painel">×</button>
   </header>
-  <p class="lede"><em>arrastar</em> orbita · <em>roda</em> zoom · <em>H</em> fecha</p>
 
-  <details open><summary><span class="n">01</span>Física</summary><div class="body">
+  <details open><summary>Física</summary><div class="body">
     <label class="ctl"><span class="t">Spin a<output id="o_spin"></output></span>
       <input id="spin" type="range" min="0" max="0.99" step="0.01" value="0"></label>
     <label class="ctl"><span class="t">Temperatura na ISCO<output id="o_temp"></output></span>
@@ -155,7 +142,7 @@ button{font:inherit;cursor:pointer}
     <label class="tg"><input id="disk" type="checkbox" checked>Disco de acreção<em>4</em></label>
   </div></details>
 
-  <details open><summary><span class="n">02</span>Malha do espaço</summary><div class="body">
+  <details open><summary>Malha do espaço</summary><div class="body">
     <label class="sel">Modo
       <select id="grid">
         <option value="0">desligada</option>
@@ -175,7 +162,7 @@ button{font:inherit;cursor:pointer}
     <button id="center" class="act">Recentralizar na malha</button>
   </div></details>
 
-  <details open><summary><span class="n">03</span>Câmera</summary><div class="body">
+  <details open><summary>Câmera</summary><div class="body">
     <label class="tg"><input id="auto" type="checkbox">Órbita automática<em>espaço</em></label>
     <label class="ctl"><span class="t">Campo de visão<output id="o_fov"></output></span>
       <input id="fov" type="range" min="25" max="110" step="1" value="62"></label>
@@ -184,7 +171,7 @@ button{font:inherit;cursor:pointer}
     <button id="reset" class="act">Resetar câmera</button>
   </div></details>
 
-  <details><summary><span class="n">04</span>Imagem</summary><div class="body">
+  <details><summary>Imagem</summary><div class="body">
     <label class="ctl"><span class="t">Qualidade<output id="o_q"></output></span>
       <input id="q" type="range" min="1" max="5" step="1" value="3"></label>
     <label class="tg"><input id="dyn" type="checkbox" checked>Resolução dinâmica (60 fps)</label>
@@ -198,7 +185,7 @@ button{font:inherit;cursor:pointer}
     <input id="skyfile" type="file" accept="image/*" hidden>
   </div></details>
 
-  <details open><summary><span class="n">05</span>Gravar</summary><div class="body">
+  <details open><summary>Gravar</summary><div class="body">
     <label class="sel">Formato
       <select id="fmt">
         <option value="screen">tela cheia</option>
@@ -209,8 +196,10 @@ button{font:inherit;cursor:pointer}
     <div class="pair"><button id="shot" class="act">Screenshot<em>P</em></button><button id="cine" class="act">Cinema<em>C</em></button></div>
   </div></details>
 
-  <details><summary><span class="n">06</span>Atalhos</summary><div class="body">
+  <details><summary>Atalhos</summary><div class="body">
     <div class="keys">
+      <b>arrastar</b><span>girar a câmera</span>
+      <b>roda</b><span>zoom</span>
       <b>↑ ↓</b><span>inclinação do disco</span>
       <b>← →</b><span>girar em volta</span>
       <b>W A S D</b><span>mover o buraco pela malha</span>
@@ -224,7 +213,7 @@ button{font:inherit;cursor:pointer}
     </div>
   </div></details>
 </aside>
-<button id="tab" title="Abrir painel (H)">Controles <span>H</span></button>
+<button id="tab" title="Abrir painel (H)">☰ Controles <span>H</span></button>
 
 <pre id="validation" hidden></pre>
 
