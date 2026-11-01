@@ -6,3 +6,12 @@ __pycache__/
 
 # Cache e arquivos gerados
 outputs/cache/
+*.egg-info/
+*.nbi
+*.nbc
+
+# Renders (vídeos e quadros ficam grandes)
+outputs/frames/
+outputs/*.mp4
+outputs/tiles/
+assets/
